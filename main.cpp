@@ -2,6 +2,14 @@
 #include <QQmlApplicationEngine>
 #include <QQuickWindow>
 
+#include<QColor>
+#include<QQmlContext>
+#include<QQmlEngine>
+#include<QDebug>
+#include<QQuickItem>
+#include<QString>
+#include<QIcon>
+
 #include "musicApp.h"
 #include "util.h"
 

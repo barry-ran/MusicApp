@@ -1,9 +1,14 @@
 import QtQuick 2.4
+import MusicAppCore 1.0
 
 Rectangle {
    id: legtList
    width: 200
    color: "#555555"
+
+   property PlayList playList
+   property Container container
+
    Component {
        id: leftListViewDelegate
        Item {
@@ -22,14 +27,18 @@ Rectangle {
                    hoverEnabled: true
                    onClicked: {
                        leftListView.currentIndex = index
+                       container.updatePlayList(listname)
+                       container.showPlayList()
                    }
                }
            }
        }
    }
+
    ListModel {
        id: leftListModel
    }
+
    ListView {
        id: leftListView
        anchors.fill: parent
@@ -37,6 +46,7 @@ Rectangle {
        model: leftListModel
        clip: true
        focus: true
+
        highlight: Component {
            Rectangle {
                radius: 3
@@ -68,7 +78,15 @@ Rectangle {
            }
        }
    }
-   function update() {
 
+   function update() {
+       for (var i in playList.playLists)
+       {
+           leftListModel.append({
+                                    listname: i
+                                })
+       }
+       container.updatePlayList("默认列表")
+       contains.showPlayList()
    }
 }

@@ -18,12 +18,22 @@ Window {
         id: mediaPlayer;
     }
 
+    //工具函数
     Util {
         id: util;
     }
 
+    //音乐API
     MusicApp {
         id: musicApp;
+    }
+
+    //播放列表
+    PlayList {
+        id: playList
+        mediaPlayer: mediaPlayer
+        musicApp: musicApp
+        util: util
     }
 
     //顶栏
@@ -31,7 +41,11 @@ Window {
         id: topBar
         anchors.left: parent.left
         anchors.right: parent.right
+
+        musicApp: musicApp
+        suggestion: suggestion
     }
+
     //底部栏
     BottomBar {
         id: bottomBar
@@ -39,6 +53,13 @@ Window {
         anchors.bottom: parent.bottom
         width: parent.width
         color: "#444444"
+
+        mediaPlayer: mediaPlayer
+        playList: playList
+        musicApp: musicApp
+        onLyricHiddenChanged: {
+            lyricView.visible = !lyricHidden
+        }
     }
 
     //边栏
@@ -47,7 +68,11 @@ Window {
         anchors.left: parent.left
         anchors.top: topBar.bottom
         anchors.bottom: bottomBar.top
+
+        playList: playList
+        container: container
     }
+
     //搜索建议
     Suggestion {
         id: suggestion
@@ -56,5 +81,66 @@ Window {
         anchors.top: topBar.bottom
         anchors.topMargin: -15
         z: 100
+
+        musicApp: musicApp
+        playList: playList
+    }
+
+    //歌词
+    Lyric {
+        id: lyricView
+
+        mediaPlayer: mediaPlayer
+        playList: playList
+        musicApp: musicApp
+
+        z: 2
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: sideBar.bottom
+        anchors.bottom: bottomBar.top
+        visible: false
+    }
+
+    //内容区域
+    Container {
+        id: container
+
+        lyric: lyricView
+
+        anchors.left: sideBar.right
+        anchors.top: topBar.bottom
+        anchors.bottom: bottomBar.top
+        anchors.right: parent.right
+
+        musicApp: musicApp
+        playList: playList
+    }
+
+    MouseArea {
+        anchors.fill: parent
+        z: -1
+        onClicked: {
+            suggestion.hide()
+        }
+    }
+
+    //关闭时
+    Component.onDestruction: {
+        //保存播放列表
+        playList.saveTo("playList")
+    }
+
+    //加载结束
+    Component.onCompleted: {
+        //加载播放列表
+        playList.loadFrom("playList")
+        sideBar.update()
+
+        //列表中第一首为默认歌曲
+        if (playList.count() > 0)
+        {
+            playList.index = 0
+        }
     }
 }

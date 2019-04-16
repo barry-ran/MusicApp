@@ -2,12 +2,17 @@ import QtQuick 2.4
 import QtQuick.Controls 1.3
 import QtQuick.Controls.Styles 1.3
 import QtMultimedia 5.4
+import MusicAppCore 1.0
 
 Rectangle {
    height: 60
    color: "#444444"
 
    property bool isPlaying: false
+   property MediaPlayer mediaPlayer
+   property PlayList playList
+   property MusicApp musicApp
+   property bool lyricHidden: true
 
    Rectangle {
        id: songPicWrapper
@@ -24,7 +29,7 @@ Rectangle {
        MouseArea {
            anchors.fill: parent
            onClicked: {
-
+               lyricHidden = !lyricHidden
            }
        }
    }
@@ -56,7 +61,7 @@ Rectangle {
                onEntered: parent.color = "#33ffffff"
                onExited: parent.color = "#00000000"
                onClicked: {
-
+                    playList.previous()
                }
            }
        }
@@ -82,11 +87,11 @@ Rectangle {
                    isPlaying = !isPlaying
                    if (isPlaying)
                    {
-
+                        playList.play()
                    }
                    else
                    {
-
+                        playList.pause()
                    }
                }
            }
@@ -111,7 +116,7 @@ Rectangle {
                onEntered: parent.color = "#33ffffff"
                onExited: parent.color = "#00000000"
                onClicked: {
-
+                    playList.next()
                }
            }
        }
@@ -221,7 +226,7 @@ Rectangle {
            onPressedChanged: {
                if (!pressed)
                {
-
+                    mediaPlayer.seek(value)
                }
            }
            function formatTime(ms)
@@ -270,7 +275,7 @@ Rectangle {
                onEntered: parent.color = "#33ffffff"
                onExited: parent.color = "#00000000"
                onClicked: {
-
+                   mediaPlayer.muted = !mediaPlayer.muted
                }
            }
        }
@@ -286,7 +291,12 @@ Rectangle {
            value: 0.7
            stepSize: 0.02
            onValueChanged: {
-
+               mediaPlayer.volume = volumeSlider.value
+               setVolumeIcon()
+               if (mediaPlayer.muted)
+               {
+                   mediaPlayer.muted = false
+               }
            }
            style: SliderStyle {
                groove: Rectangle {
@@ -322,6 +332,7 @@ Rectangle {
            }
        }
    }
+
    //计时器
    Timer {
        interval: 500
@@ -330,11 +341,72 @@ Rectangle {
        onTriggered: {
            if (!slider.pressed)
            {
-
+               slider.value = mediaPlayer.position
            }
        }
    }
-   Connections {
 
+   Connections {
+       target: mediaPlayer
+       onStopped: {
+           slider.maximumValue = 0
+           slider.value = 0
+           isPlaying = false
+       }
+
+       onPaused: {
+           isPlaying = false
+       }
+
+       onPlaying: {
+           slider.maximumValue = mediaPlayer.duration
+           slider.value = mediaPlayer.position
+           isPlaying = true
+       }
+
+       onDurationChanged: {
+           slider.maximumValue = mediaPlayer.duration
+       }
+
+       onMutedChanged: {
+           if (mediaPlayer.muted)
+           {
+               volumeImg.source = "qrc:/image/image/volume-mute-icon.png"
+           }
+           else
+           {
+               volumeSlider.value = mediaPlayer.volume
+               volumeSlider.setVolumeIcon()
+           }
+       }
+   }
+
+   Connections {
+       target: musicApp
+       onGetSongInfoComplete: {
+           try {
+               var songInfo_ = JSON.parse(songInfo)
+               var currentSong = songInfo_.data.songList[0]
+               var picLink = currentSong.songPicSmall
+               var queryId = currentSong.queryId
+               if (playList.getSong(playList.currentIndex()).sid == queryId)
+               {
+                   songPic.source = picLink
+                   currentSongInfo.setAlbum(currentSong.albumName)
+               }
+           } catch (e) {
+               console.log("BottomBar[onGetSongInfoComplete]: " + e)
+           }
+       }
+   }
+
+   Connections {
+       target: playList
+       onIndexChanged: {
+           currentSongInfo.clear()
+           var song = playList.getSong(playList.index)
+           currentSongInfo.setSongName(song.sname)
+           currentSongInfo.setSinger(song.singer)
+       }
    }
 }
